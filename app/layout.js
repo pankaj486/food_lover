@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./providers/AuthProvider";
+import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,15 +14,26 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Auth Flow Mermaid Viewer",
-  description: "Mermaid-powered auth flow visualizer with Next.js API routes.",
+  title: "Food Lover",
+  description: "Food Lover experience with secure login and kitchen APIs.",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: "#0f172a",
+                color: "#f8fafc",
+              },
+            }}
+          />
+        </AuthProvider>
       </body>
     </html>
   );

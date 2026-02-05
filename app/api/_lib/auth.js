@@ -60,3 +60,12 @@ export const tokenConfig = {
   accessTtlSeconds: 30,
   refreshTtlDays: 7,
 };
+
+const rawOtpTtl = Number(process.env.OTP_TTL_MINUTES || 10);
+const rawOtpGrace = Number(process.env.OTP_GRACE_SECONDS || 120);
+
+export const otpConfig = {
+  ttlMinutes: Number.isFinite(rawOtpTtl) && rawOtpTtl > 0 ? rawOtpTtl : 10,
+  devMode: process.env.OTP_DEV_MODE === "true",
+  graceSeconds: Number.isFinite(rawOtpGrace) && rawOtpGrace >= 0 ? rawOtpGrace : 120,
+};

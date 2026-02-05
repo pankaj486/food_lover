@@ -9,7 +9,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { email, password, name } = body || {};
+    const { email, password } = body || {};
 
     if (!email || !password) {
       return NextResponse.json({ message: "Email and password required" }, { status: 400 });
@@ -20,24 +20,18 @@ export async function POST(request) {
       return NextResponse.json({ message: "Invalid email format" }, { status: 400 });
     }
 
-    if (String(password).length < 8) {
-      return NextResponse.json(
-        { message: "Password must be at least 8 characters" },
-        { status: 400 }
-      );
-    }
-
-    const trimmedName = name ? String(name).trim() : "";
-    if (trimmedName && trimmedName.length > 60) {
-      return NextResponse.json({ message: "Name is too long" }, { status: 400 });
-    }
-
-    const existing = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
 
-    if (existing) {
-      return NextResponse.json({ message: "Email already registered" }, { status: 409 });
+    if (!user) {
+      return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
+    }
+
+    const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+
+    if (!passwordMatches) {
+      return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
     }
 
     if (!smtpReady()) {
@@ -46,16 +40,6 @@ export async function POST(request) {
         { status: 500 }
       );
     }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const user = await prisma.user.create({
-      data: {
-        email: normalizedEmail,
-        name: trimmedName || null,
-        passwordHash,
-      },
-    });
 
     const rawOtp = String(Math.floor(100000 + Math.random() * 900000));
     const otpHash = await bcrypt.hash(rawOtp, 10);
@@ -71,7 +55,7 @@ export async function POST(request) {
     });
 
     const response = NextResponse.json({
-      message: "Registration successful. OTP sent.",
+      message: "OTP resent",
       requiresOtp: true,
       otpId: otpRecord.id,
     });
@@ -80,7 +64,6 @@ export async function POST(request) {
       await sendOtpEmail({ to: user.email, code: rawOtp, expiresAt });
     } catch (error) {
       await prisma.otp.delete({ where: { id: otpRecord.id } });
-      await prisma.user.delete({ where: { id: user.id } });
       return NextResponse.json(
         { message: "Failed to send OTP email. Try again later." },
         { status: 500 }
@@ -93,6 +76,6 @@ export async function POST(request) {
 
     return response;
   } catch (error) {
-    return NextResponse.json({ message: "Registration failed" }, { status: 400 });
+    return NextResponse.json({ message: "Bad request" }, { status: 400 });
   }
 }

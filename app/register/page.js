@@ -6,113 +6,85 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../providers/AuthProvider";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const { api, setAccessToken, setUser } = useAuth();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "" });
+  const [registerStatus, setRegisterStatus] = useState("Idle");
+  const [registerError, setRegisterError] = useState("");
+  const [registerSuccess, setRegisterSuccess] = useState("");
+  const [step, setStep] = useState("register");
   const [otpCode, setOtpCode] = useState("");
-  const [step, setStep] = useState("login");
-  const [status, setStatus] = useState("Idle");
-  const [error, setError] = useState("");
   const [otpStatus, setOtpStatus] = useState("Idle");
   const [otpError, setOtpError] = useState("");
   const [otpHint, setOtpHint] = useState("");
   const [otpId, setOtpId] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  const onChange = (event) => {
+  const onRegisterChange = (event) => {
     const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setRegisterForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const onSubmit = async (event) => {
+  const onRegister = async (event) => {
     event.preventDefault();
-    setStatus("Signing in...");
-    setError("");
-    setOtpHint("");
+    setRegisterStatus("Creating account...");
+    setRegisterError("");
+    setRegisterSuccess("");
 
-    if (!form.email.trim() || !form.password) {
+    if (!registerForm.email.trim() || !registerForm.password) {
       const message = "Email and password are required.";
-      setError(message);
+      setRegisterError(message);
       toast.error(message);
-      setStatus("Login failed");
+      setRegisterStatus("Registration failed");
       return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerForm.email.trim())) {
       const message = "Enter a valid email address.";
-      setError(message);
+      setRegisterError(message);
       toast.error(message);
-      setStatus("Login failed");
+      setRegisterStatus("Registration failed");
+      return;
+    }
+
+    if (registerForm.password.length < 8) {
+      const message = "Password must be at least 8 characters.";
+      setRegisterError(message);
+      toast.error(message);
+      setRegisterStatus("Registration failed");
       return;
     }
 
     try {
-      const response = await api.post("/api/login", {
-        email: form.email,
-        password: form.password,
+      const response = await api.post("/api/register", {
+        name: registerForm.name,
+        email: registerForm.email,
+        password: registerForm.password,
       });
 
       if (response.data?.requiresOtp) {
-        setStatus("OTP required");
+        setRegisterStatus("OTP required");
         setStep("otp");
+        const hint = response.headers["x-otp-dev-code"];
+        if (hint) setOtpHint(hint);
+        if (response.data?.otpId) setOtpId(response.data.otpId);
+        setResendCooldown(30);
+        setRegisterSuccess("Account created. Verify the OTP sent to your email.");
         toast.success("OTP sent. Check your email.");
-        const hint = response.headers["x-otp-dev-code"];
-        if (hint) setOtpHint(hint);
-        if (response.data?.otpId) setOtpId(response.data.otpId);
-        setResendCooldown(30);
         return;
       }
 
-      setStatus("Login failed");
-      setError("OTP required but not issued.");
-      toast.error("OTP step failed. Try again.");
+      setRegisterStatus("Account created");
+      setRegisterSuccess("Account created. You can now sign in.");
+      toast.success("Account created. Please sign in.");
     } catch (err) {
-      setError("Login failed. Check your email and password.");
-      toast.error(err.response?.data?.message || "Login failed.");
-      setStatus("Login failed");
+      const message = err.response?.data?.message || "Registration failed.";
+      setRegisterError(message);
+      toast.error(message);
+      setRegisterStatus("Registration failed");
     }
   };
-
-  const onResendOtp = async () => {
-    if (!form.email.trim() || !form.password) {
-      toast.error("Enter your email and password to resend OTP.");
-      return;
-    }
-    if (resendCooldown > 0) return;
-
-    setStatus("Resending OTP...");
-    setOtpError("");
-    setOtpHint("");
-
-    try {
-      const response = await api.post("/api/resend-otp", {
-        email: form.email,
-        password: form.password,
-      });
-
-      if (response.data?.requiresOtp) {
-        toast.success("New OTP sent.");
-        const hint = response.headers["x-otp-dev-code"];
-        if (hint) setOtpHint(hint);
-        if (response.data?.otpId) setOtpId(response.data.otpId);
-        setResendCooldown(30);
-        setStatus("OTP required");
-        return;
-      }
-      toast.error("Unable to resend OTP.");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to resend OTP.");
-    }
-  };
-
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = setInterval(() => {
-      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resendCooldown]);
 
   const onVerifyOtp = async (event) => {
     event.preventDefault();
@@ -129,7 +101,7 @@ export default function LoginPage() {
 
     try {
       const response = await api.post("/api/verify-otp", {
-        email: form.email,
+        email: registerForm.email,
         code: otpCode,
         otpId: otpId || undefined,
       });
@@ -137,7 +109,7 @@ export default function LoginPage() {
       setAccessToken(response.data.accessToken || "");
       setUser(response.data.user || null);
       setOtpStatus("Verified");
-      toast.success("OTP verified. Welcome back!");
+      toast.success("OTP verified. Welcome!");
       router.push("/");
     } catch (err) {
       const message = err.response?.data?.message || "OTP verification failed.";
@@ -147,27 +119,81 @@ export default function LoginPage() {
     }
   };
 
+  const onResendOtp = async () => {
+    if (!registerForm.email.trim() || !registerForm.password) {
+      toast.error("Enter your email and password to resend OTP.");
+      return;
+    }
+    if (resendCooldown > 0) return;
+
+    setRegisterStatus("Resending OTP...");
+    setOtpError("");
+    setOtpHint("");
+
+    try {
+      const response = await api.post("/api/resend-otp", {
+        email: registerForm.email,
+        password: registerForm.password,
+      });
+
+      if (response.data?.requiresOtp) {
+        toast.success("New OTP sent.");
+        const hint = response.headers["x-otp-dev-code"];
+        if (hint) setOtpHint(hint);
+        if (response.data?.otpId) setOtpId(response.data.otpId);
+        setResendCooldown(30);
+        setRegisterStatus("OTP required");
+        return;
+      }
+      toast.error("Unable to resend OTP.");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to resend OTP.");
+    }
+  };
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#d8f3dc_0%,#fefae0_35%,#edf6f9_70%,#ffffff_100%)] text-emerald-950">
-      <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col justify-center gap-6 px-6 py-12">
+      <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center px-6 py-12">
         <div className="rounded-3xl border border-emerald-900/10 bg-white/85 p-8 shadow-[0_18px_40px_rgba(16,185,129,0.12)]">
           <p className="text-xs font-semibold uppercase tracking-[0.4em] text-emerald-600">
             Food Lover
           </p>
-          <h1 className="mt-4 text-3xl font-semibold text-emerald-950">Welcome back</h1>
+          <h1 className="mt-4 text-3xl font-semibold text-emerald-950">
+            Create your Food Lover account
+          </h1>
           <p className="mt-2 text-sm text-emerald-700">
-            Sign in to access your saved kitchens, cravings, and live orders.
+            Join to save favorites, follow chefs, and unlock tasting menus.
           </p>
 
-          {step === "login" ? (
-            <form onSubmit={onSubmit} className="mt-8 space-y-4">
+          {step === "register" ? (
+            <form onSubmit={onRegister} className="mt-8 space-y-4">
+              <label className="block text-sm font-medium text-emerald-800">
+                Name (optional)
+                <input
+                  name="name"
+                  type="text"
+                  value={registerForm.name}
+                  onChange={onRegisterChange}
+                  className="mt-2 w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-900 outline-none focus:border-emerald-400"
+                  placeholder="Your name"
+                />
+              </label>
+
               <label className="block text-sm font-medium text-emerald-800">
                 Email
                 <input
                   name="email"
                   type="email"
-                  value={form.email}
-                  onChange={onChange}
+                  value={registerForm.email}
+                  onChange={onRegisterChange}
                   required
                   className="mt-2 w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-900 outline-none focus:border-emerald-400"
                   placeholder="you@example.com"
@@ -179,17 +205,23 @@ export default function LoginPage() {
                 <input
                   name="password"
                   type="password"
-                  value={form.password}
-                  onChange={onChange}
+                  value={registerForm.password}
+                  onChange={onRegisterChange}
                   required
                   className="mt-2 w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-900 outline-none focus:border-emerald-400"
-                  placeholder="••••••••"
+                  placeholder="Create a password"
                 />
               </label>
 
-              {error ? (
+              {registerError ? (
                 <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  {error}
+                  {registerError}
+                </p>
+              ) : null}
+
+              {registerSuccess ? (
+                <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                  {registerSuccess}
                 </p>
               ) : null}
 
@@ -197,7 +229,7 @@ export default function LoginPage() {
                 type="submit"
                 className="w-full rounded-full bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-emerald-700"
               >
-                {status === "Signing in..." ? "Signing in..." : "Continue"}
+                {registerStatus === "Creating account..." ? "Creating account..." : "Create account"}
               </button>
             </form>
           ) : (
@@ -252,15 +284,10 @@ export default function LoginPage() {
           )}
 
           <div className="mt-6 flex items-center justify-between text-xs text-emerald-700">
-            <p>Status: {step === "login" ? status : otpStatus}</p>
-            <div className="flex items-center gap-3">
-              <Link className="font-semibold text-emerald-800 hover:text-emerald-900" href="/register">
-                Create Food Lover account
-              </Link>
-              <Link className="font-semibold text-emerald-800 hover:text-emerald-900" href="/">
-                Back to flow
-              </Link>
-            </div>
+            <p>Status: {step === "register" ? registerStatus : otpStatus}</p>
+            <Link className="font-semibold text-emerald-800 hover:text-emerald-900" href="/login">
+              Back to Food Lover sign in
+            </Link>
           </div>
         </div>
       </main>

@@ -1,18 +1,28 @@
 "use client";
 
 import axios from "axios";
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import toast from "react-hot-toast";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [accessToken, setAccessToken] = useState("");
+  const [accessToken, setAccessTokenState] = useState("");
   const [user, setUser] = useState(null);
 
   const accessTokenRef = useRef("");
-  useEffect(() => {
-    accessTokenRef.current = accessToken;
-  }, [accessToken]);
+  const setAccessToken = useCallback((token) => {
+    const nextToken = token || "";
+    accessTokenRef.current = nextToken;
+    setAccessTokenState(nextToken);
+    if (apiRef.current) {
+      if (nextToken) {
+        apiRef.current.defaults.headers.common.Authorization = `Bearer ${nextToken}`;
+      } else {
+        delete apiRef.current.defaults.headers.common.Authorization;
+      }
+    }
+  }, []);
 
   const apiRef = useRef(null);
   if (!apiRef.current) {
@@ -51,7 +61,13 @@ export function AuthProvider({ children }) {
           return Promise.reject(error);
         }
 
-        if (originalRequest.url?.includes("/api/login") || originalRequest.url?.includes("/api/refresh")) {
+        if (
+          originalRequest.url?.includes("/api/login") ||
+          originalRequest.url?.includes("/api/refresh") ||
+          originalRequest.url?.includes("/api/verify-otp") ||
+          originalRequest.url?.includes("/api/register") ||
+          originalRequest.url?.includes("/api/resend-otp")
+        ) {
           return Promise.reject(error);
         }
 
@@ -111,14 +127,16 @@ export function AuthProvider({ children }) {
       logout: async () => {
         try {
           await apiRef.current.post("/api/logout");
+          toast.success("Logged out");
         } catch (error) {
           // Ignore logout errors, clear local state anyway.
+          toast.error("Logout failed");
         }
         setAccessToken("");
         setUser(null);
       },
     }),
-    [accessToken, user]
+    [accessToken, setAccessToken, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

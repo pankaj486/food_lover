@@ -26,8 +26,14 @@ export default function Mermaid({ chart, title }) {
   const uniqueId = useId();
   const containerRef = useRef(null);
   const [renderError, setRenderError] = useState("");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     let active = true;
 
     const render = async () => {
@@ -48,7 +54,7 @@ export default function Mermaid({ chart, title }) {
     return () => {
       active = false;
     };
-  }, [chart, uniqueId]);
+  }, [chart, uniqueId, mounted]);
 
   return (
     <div className="rounded-3xl border border-emerald-900/15 bg-white/80 p-6 shadow-[0_20px_50px_rgba(16,185,129,0.15)] backdrop-blur">
@@ -65,7 +71,12 @@ export default function Mermaid({ chart, title }) {
       </div>
 
       <div className="mt-6">
-        {renderError ? (
+        {!mounted ? (
+          <div
+            className="min-h-[220px] rounded-2xl bg-emerald-50/60 p-4"
+            aria-hidden="true"
+          />
+        ) : renderError ? (
           <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {renderError}
           </p>
@@ -73,7 +84,8 @@ export default function Mermaid({ chart, title }) {
           <div
             ref={containerRef}
             className="mermaid min-h-[220px] overflow-x-auto rounded-2xl bg-emerald-50/60 p-4"
-          />
+            suppressHydrationWarning
+          ></div>
         )}
       </div>
     </div>
