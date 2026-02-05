@@ -5,6 +5,8 @@ const defaultAuthExemptRoutes = [
   "/api/register",
   "/api/verify-otp",
   "/api/resend-otp",
+  "/api/forgot-password",
+  "/api/reset-password",
   "/api/refresh",
   "/api/admin/login",
   "/api/admin/verify-otp",

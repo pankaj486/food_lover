@@ -14,6 +14,18 @@ export function verifyOtp(api, payload) {
   return api.post("/api/verify-otp", payload);
 }
 
+export function forgotPassword(api, payload) {
+  return api.post("/api/forgot-password", payload);
+}
+
+export function resetPassword(api, payload) {
+  return api.post("/api/reset-password", payload);
+}
+
+export function changePassword(api, payload) {
+  return api.post("/api/change-password", payload);
+}
+
 export function adminLogin(api, payload) {
   return api.post("/api/admin/login", payload);
 }

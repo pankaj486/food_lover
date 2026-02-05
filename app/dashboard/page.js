@@ -125,6 +125,12 @@ export default function DashboardPage() {
               >
                 Back to landing
               </Link>
+              <Link
+                href="/profile"
+                className="rounded-full border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-900 hover:border-amber-500"
+              >
+                Profile
+              </Link>
               {user?.isAdmin ? (
                 <Link
                   href="/admin"
