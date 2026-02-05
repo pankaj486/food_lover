@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const email = (process.env.SEED_USER_EMAIL || "admin@demo.dev").toLowerCase();
+const email = (process.env.SEED_USER_EMAIL || "admin-demo@yopmail.com").toLowerCase();
 const password = process.env.SEED_USER_PASSWORD || "password";
 const name = process.env.SEED_USER_NAME || "Demo Admin";
 

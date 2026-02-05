@@ -1,8 +1,8 @@
 "use client";
 
-import axios from "axios";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { createApiClient } from "../lib/apiClient";
 
 const AuthContext = createContext(null);
 
@@ -11,6 +11,8 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
 
   const accessTokenRef = useRef("");
+  const apiRef = useRef(null);
+  const cleanupRef = useRef(null);
   const setAccessToken = useCallback((token) => {
     const nextToken = token || "";
     accessTokenRef.current = nextToken;
@@ -24,98 +26,27 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const apiRef = useRef(null);
+  const handleAuthFailure = useCallback(() => {
+    setAccessToken("");
+    setUser(null);
+  }, [setAccessToken, setUser]);
+
   if (!apiRef.current) {
-    apiRef.current = axios.create({ baseURL: "", withCredentials: true });
+    const { api, cleanup } = createApiClient({
+      getAccessToken: () => accessTokenRef.current,
+      setAccessToken,
+      onAuthFailure: handleAuthFailure,
+    });
+    apiRef.current = api;
+    cleanupRef.current = cleanup;
   }
 
-  useEffect(() => {
-    const api = apiRef.current;
-    let isRefreshing = false;
-    let queued = [];
-
-    const processQueue = (error, token) => {
-      queued.forEach(({ resolve, reject }) => {
-        if (error) reject(error);
-        else resolve(token);
-      });
-      queued = [];
-    };
-
-    const requestInterceptor = api.interceptors.request.use((config) => {
-      const token = accessTokenRef.current;
-      if (token) {
-        config.headers = config.headers || {};
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
-
-    const responseInterceptor = api.interceptors.response.use(
-      (response) => response,
-      async (error) => {
-        const originalRequest = error.config;
-        const status = error.response?.status;
-
-        if (!originalRequest || status !== 401) {
-          return Promise.reject(error);
-        }
-
-        if (
-          originalRequest.url?.includes("/api/login") ||
-          originalRequest.url?.includes("/api/refresh") ||
-          originalRequest.url?.includes("/api/verify-otp") ||
-          originalRequest.url?.includes("/api/register") ||
-          originalRequest.url?.includes("/api/resend-otp")
-        ) {
-          return Promise.reject(error);
-        }
-
-        if (originalRequest._retry) {
-          return Promise.reject(error);
-        }
-
-        originalRequest._retry = true;
-
-        if (isRefreshing) {
-          return new Promise((resolve, reject) => {
-            queued.push({ resolve, reject });
-          }).then((token) => {
-            if (token) {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-            }
-            return api(originalRequest);
-          });
-        }
-
-        isRefreshing = true;
-        try {
-          const refreshResponse = await axios.post("/api/refresh", {}, { withCredentials: true });
-          const newToken = refreshResponse.data?.accessToken || "";
-          setAccessToken(newToken);
-          processQueue(null, newToken);
-
-          if (newToken) {
-            originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          }
-
-          return api(originalRequest);
-        } catch (refreshError) {
-          processQueue(refreshError, null);
-          setAccessToken("");
-          setUser(null);
-          return Promise.reject(refreshError);
-        } finally {
-          isRefreshing = false;
-        }
-      }
-    );
-
-    return () => {
-      api.interceptors.request.eject(requestInterceptor);
-      api.interceptors.response.eject(responseInterceptor);
-    };
-  }, []);
+  useEffect(
+    () => () => {
+      if (cleanupRef.current) cleanupRef.current();
+    },
+    []
+  );
 
   const value = useMemo(
     () => ({

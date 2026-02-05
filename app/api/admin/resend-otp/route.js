@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { issueOtp } from "../_services/otpService";
-import { findUserByEmail, verifyPassword } from "../_services/userService";
-import { isValidEmail, normalizeEmail } from "../_lib/validation";
+import { isAdminEmail, requireAdminConfigured } from "../../_lib/admin";
+import { issueOtp } from "../../_services/otpService";
+import { findUserByEmail, verifyPassword } from "../../_services/userService";
+import { isValidEmail, normalizeEmail } from "../../_lib/validation";
 
 export async function POST(request) {
   try {
@@ -16,28 +17,37 @@ export async function POST(request) {
     if (!isValidEmail(normalizedEmail)) {
       return NextResponse.json({ message: "Invalid email format" }, { status: 400 });
     }
-    const user = await findUserByEmail(normalizedEmail);
 
+    const configCheck = requireAdminConfigured();
+    if (!configCheck.ok) {
+      return NextResponse.json({ message: configCheck.message }, { status: configCheck.status });
+    }
+
+    const user = await findUserByEmail(normalizedEmail);
     if (!user) {
       return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
     }
 
     const passwordMatches = await verifyPassword(user, password);
-
     if (!passwordMatches) {
       return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
     }
 
-    const otpResult = await issueOtp({ userId: user.id, email: user.email, purpose: "login" });
+    if (!isAdminEmail(user.email)) {
+      return NextResponse.json({ message: "Admin access required" }, { status: 403 });
+    }
+
+    const otpResult = await issueOtp({ userId: user.id, email: user.email, purpose: "admin" });
     if (!otpResult.ok) {
       return NextResponse.json({ message: otpResult.message }, { status: otpResult.status });
     }
 
     const response = NextResponse.json({
-      message: "OTP sent",
+      message: "OTP resent",
       requiresOtp: true,
       otpId: otpResult.otpId,
     });
+
     if (otpResult.devCode) {
       response.headers.set("x-otp-dev-code", otpResult.devCode);
     }

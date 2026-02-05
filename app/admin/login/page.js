@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useAuth } from "../providers/AuthProvider";
-import { login, resendOtp, verifyOtp } from "../lib/authApi";
+import { useAuth } from "../../providers/AuthProvider";
+import { adminLogin, adminResendOtp, adminVerifyOtp } from "../../lib/authApi";
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const router = useRouter();
   const { api, setAccessToken, setUser } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
@@ -49,7 +49,7 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await login(api, {
+      const response = await adminLogin(api, {
         email: form.email,
         password: form.password,
       });
@@ -69,8 +69,9 @@ export default function LoginPage() {
       setError("OTP required but not issued.");
       toast.error("OTP step failed. Try again.");
     } catch (err) {
-      setError("Login failed. Check your email and password.");
-      toast.error(err.response?.data?.message || "Login failed.");
+      const message = err.response?.data?.message || "Login failed.";
+      setError(message);
+      toast.error(message);
       setStatus("Login failed");
     }
   };
@@ -87,7 +88,7 @@ export default function LoginPage() {
     setOtpHint("");
 
     try {
-      const response = await resendOtp(api, {
+      const response = await adminResendOtp(api, {
         email: form.email,
         password: form.password,
       });
@@ -129,7 +130,7 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await verifyOtp(api, {
+      const response = await adminVerifyOtp(api, {
         email: form.email,
         code: otpCode,
         otpId: otpId || undefined,
@@ -138,8 +139,8 @@ export default function LoginPage() {
       setAccessToken(response.data.accessToken || "");
       setUser(response.data.user || null);
       setOtpStatus("Verified");
-      toast.success("OTP verified. Welcome back!");
-      router.push("/dashboard");
+      toast.success("OTP verified. Welcome, admin!");
+      router.push("/admin");
     } catch (err) {
       const message = err.response?.data?.message || "OTP verification failed.";
       setOtpError(message);
@@ -149,20 +150,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#d8f3dc_0%,#fefae0_35%,#edf6f9_70%,#ffffff_100%)] text-emerald-950">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#f1f5f9_0%,#e2e8f0_45%,#ffffff_100%)] text-slate-950">
       <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col justify-center gap-6 px-6 py-12">
-        <div className="rounded-3xl border border-emerald-900/10 bg-white/85 p-8 shadow-[0_18px_40px_rgba(16,185,129,0.12)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-emerald-600">
-            Food Lover
+        <div className="rounded-3xl border border-slate-200 bg-white/85 p-8 shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-slate-500">
+            Food Lover Admin
           </p>
-          <h1 className="mt-4 text-3xl font-semibold text-emerald-950">Welcome back</h1>
-          <p className="mt-2 text-sm text-emerald-700">
-            Sign in to access your saved kitchens, cravings, and live orders.
+          <h1 className="mt-4 text-3xl font-semibold text-slate-900">Admin sign in</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Use your admin email to access the console.
           </p>
 
           {step === "login" ? (
             <form onSubmit={onSubmit} className="mt-8 space-y-4">
-              <label className="block text-sm font-medium text-emerald-800">
+              <label className="block text-sm font-medium text-slate-700">
                 Email
                 <input
                   name="email"
@@ -170,12 +171,12 @@ export default function LoginPage() {
                   value={form.email}
                   onChange={onChange}
                   required
-                  className="mt-2 w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-900 outline-none focus:border-emerald-400"
-                  placeholder="you@example.com"
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-slate-400"
+                  placeholder="admin@example.com"
                 />
               </label>
 
-              <label className="block text-sm font-medium text-emerald-800">
+              <label className="block text-sm font-medium text-slate-700">
                 Password
                 <input
                   name="password"
@@ -183,7 +184,7 @@ export default function LoginPage() {
                   value={form.password}
                   onChange={onChange}
                   required
-                  className="mt-2 w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-900 outline-none focus:border-emerald-400"
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-slate-400"
                   placeholder="••••••••"
                 />
               </label>
@@ -196,14 +197,14 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full rounded-full bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-emerald-700"
+                className="w-full rounded-full bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800"
               >
                 {status === "Signing in..." ? "Signing in..." : "Continue"}
               </button>
             </form>
           ) : (
             <form onSubmit={onVerifyOtp} className="mt-8 space-y-4">
-              <label className="block text-sm font-medium text-emerald-800">
+              <label className="block text-sm font-medium text-slate-700">
                 Verification code
                 <input
                   name="otp"
@@ -217,13 +218,13 @@ export default function LoginPage() {
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   maxLength={6}
-                  className="mt-2 w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-900 outline-none focus:border-emerald-400"
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-slate-400"
                   placeholder="6-digit code"
                 />
               </label>
 
               {otpHint ? (
-                <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-700">
+                <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
                   Dev OTP: {otpHint}
                 </p>
               ) : null}
@@ -236,7 +237,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full rounded-full bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-emerald-700"
+                className="w-full rounded-full bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800"
               >
                 {otpStatus === "Verifying..." ? "Verifying..." : "Verify code"}
               </button>
@@ -245,21 +246,18 @@ export default function LoginPage() {
                 type="button"
                 onClick={onResendOtp}
                 disabled={resendCooldown > 0}
-                className="w-full rounded-full border border-emerald-300 px-4 py-3 text-sm font-semibold text-emerald-800 hover:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-full border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-800 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
               </button>
             </form>
           )}
 
-          <div className="mt-6 flex items-center justify-between text-xs text-emerald-700">
+          <div className="mt-6 flex items-center justify-between text-xs text-slate-600">
             <p>Status: {step === "login" ? status : otpStatus}</p>
             <div className="flex items-center gap-3">
-              <Link className="font-semibold text-emerald-800 hover:text-emerald-900" href="/register">
-                Create Food Lover account
-              </Link>
-              <Link className="font-semibold text-emerald-800 hover:text-emerald-900" href="/">
-                Back to flow
+              <Link className="font-semibold text-slate-700 hover:text-slate-900" href="/">
+                Back to landing
               </Link>
             </div>
           </div>

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { tokenConfig } from "../_lib/auth";
-import { isAdminEmail } from "../_lib/admin";
-import { issueTokens } from "../_services/tokenService";
-import { resolveOtpForVerification, markOtpUsed, verifyOtpCode } from "../_services/otpService";
-import { findUserByEmail } from "../_services/userService";
-import { isValidEmail, isValidOtp, normalizeEmail, normalizeOtp } from "../_lib/validation";
+import { tokenConfig } from "../../_lib/auth";
+import { isAdminEmail, requireAdminConfigured } from "../../_lib/admin";
+import { issueTokens } from "../../_services/tokenService";
+import { resolveOtpForVerification, markOtpUsed, verifyOtpCode } from "../../_services/otpService";
+import { findUserByEmail } from "../../_services/userService";
+import { isValidEmail, isValidOtp, normalizeEmail, normalizeOtp } from "../../_lib/validation";
 
 export async function POST(request) {
   try {
@@ -20,20 +20,29 @@ export async function POST(request) {
       return NextResponse.json({ message: "Invalid email format" }, { status: 400 });
     }
 
+    const configCheck = requireAdminConfigured();
+    if (!configCheck.ok) {
+      return NextResponse.json({ message: configCheck.message }, { status: configCheck.status });
+    }
+
     const normalizedCode = normalizeOtp(code);
     if (!isValidOtp(normalizedCode)) {
       return NextResponse.json({ message: "OTP must be 6 digits" }, { status: 400 });
     }
-    const user = await findUserByEmail(normalizedEmail);
 
+    const user = await findUserByEmail(normalizedEmail);
     if (!user) {
       return NextResponse.json({ message: "Invalid verification attempt" }, { status: 401 });
+    }
+
+    if (!isAdminEmail(user.email)) {
+      return NextResponse.json({ message: "Admin access required" }, { status: 403 });
     }
 
     const otpResult = await resolveOtpForVerification({
       userId: user.id,
       otpId,
-      purpose: "login",
+      purpose: "admin",
     });
 
     if (!otpResult.ok) {
@@ -48,7 +57,6 @@ export async function POST(request) {
     }
 
     const matches = await verifyOtpCode(otpResult.otp, normalizedCode);
-
     if (!matches) {
       return NextResponse.json({ message: "Invalid OTP" }, { status: 401 });
     }
@@ -59,12 +67,7 @@ export async function POST(request) {
     const response = NextResponse.json({
       accessToken,
       expiresIn: tokenConfig.accessTtlSeconds,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name ?? "",
-        isAdmin: isAdminEmail(user.email),
-      },
+      user: { id: user.id, email: user.email, name: user.name ?? "", isAdmin: true },
     });
 
     response.cookies.set({

@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import prisma from "../_lib/prisma";
-import { otpConfig } from "../_lib/auth";
-import { sendOtpEmail, smtpReady } from "../_lib/mailer";
-
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { issueOtp } from "../_services/otpService";
+import { createUser, findUserByEmail } from "../_services/userService";
+import { isValidEmail, isValidPassword, normalizeEmail } from "../_lib/validation";
 
 export async function POST(request) {
   try {
@@ -15,12 +13,12 @@ export async function POST(request) {
       return NextResponse.json({ message: "Email and password required" }, { status: 400 });
     }
 
-    const normalizedEmail = String(email).trim().toLowerCase();
-    if (!emailRegex.test(normalizedEmail)) {
+    const normalizedEmail = normalizeEmail(email);
+    if (!isValidEmail(normalizedEmail)) {
       return NextResponse.json({ message: "Invalid email format" }, { status: 400 });
     }
 
-    if (String(password).length < 8) {
+    if (!isValidPassword(password)) {
       return NextResponse.json(
         { message: "Password must be at least 8 characters" },
         { status: 400 }
@@ -32,63 +30,34 @@ export async function POST(request) {
       return NextResponse.json({ message: "Name is too long" }, { status: 400 });
     }
 
-    const existing = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-    });
+    const existing = await findUserByEmail(normalizedEmail);
 
     if (existing) {
       return NextResponse.json({ message: "Email already registered" }, { status: 409 });
     }
 
-    if (!smtpReady()) {
-      return NextResponse.json(
-        { message: "SMTP is not configured. Please contact support." },
-        { status: 500 }
-      );
+    const user = await createUser({ email: normalizedEmail, name: trimmedName, password });
+
+    const otpResult = await issueOtp({
+      userId: user.id,
+      email: user.email,
+      purpose: "login",
+      onSendFail: async () => {
+        await prisma.user.delete({ where: { id: user.id } });
+      },
+    });
+
+    if (!otpResult.ok) {
+      return NextResponse.json({ message: otpResult.message }, { status: otpResult.status });
     }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const user = await prisma.user.create({
-      data: {
-        email: normalizedEmail,
-        name: trimmedName || null,
-        passwordHash,
-      },
-    });
-
-    const rawOtp = String(Math.floor(100000 + Math.random() * 900000));
-    const otpHash = await bcrypt.hash(rawOtp, 10);
-    const expiresAt = new Date(Date.now() + otpConfig.ttlMinutes * 60 * 1000);
-
-    const otpRecord = await prisma.otp.create({
-      data: {
-        userId: user.id,
-        codeHash: otpHash,
-        expiresAt,
-        purpose: "login",
-      },
-    });
 
     const response = NextResponse.json({
       message: "Registration successful. OTP sent.",
       requiresOtp: true,
-      otpId: otpRecord.id,
+      otpId: otpResult.otpId,
     });
-
-    try {
-      await sendOtpEmail({ to: user.email, code: rawOtp, expiresAt });
-    } catch (error) {
-      await prisma.otp.delete({ where: { id: otpRecord.id } });
-      await prisma.user.delete({ where: { id: user.id } });
-      return NextResponse.json(
-        { message: "Failed to send OTP email. Try again later." },
-        { status: 500 }
-      );
-    }
-
-    if (otpConfig.devMode) {
-      response.headers.set("x-otp-dev-code", rawOtp);
+    if (otpResult.devCode) {
+      response.headers.set("x-otp-dev-code", otpResult.devCode);
     }
 
     return response;

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../providers/AuthProvider";
+import { register, resendOtp, verifyOtp } from "../lib/authApi";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -57,7 +58,7 @@ export default function RegisterPage() {
     }
 
     try {
-      const response = await api.post("/api/register", {
+      const response = await register(api, {
         name: registerForm.name,
         email: registerForm.email,
         password: registerForm.password,
@@ -100,7 +101,7 @@ export default function RegisterPage() {
     }
 
     try {
-      const response = await api.post("/api/verify-otp", {
+      const response = await verifyOtp(api, {
         email: registerForm.email,
         code: otpCode,
         otpId: otpId || undefined,
@@ -110,7 +111,7 @@ export default function RegisterPage() {
       setUser(response.data.user || null);
       setOtpStatus("Verified");
       toast.success("OTP verified. Welcome!");
-      router.push("/");
+      router.push("/dashboard");
     } catch (err) {
       const message = err.response?.data?.message || "OTP verification failed.";
       setOtpError(message);
@@ -131,7 +132,7 @@ export default function RegisterPage() {
     setOtpHint("");
 
     try {
-      const response = await api.post("/api/resend-otp", {
+      const response = await resendOtp(api, {
         email: registerForm.email,
         password: registerForm.password,
       });
