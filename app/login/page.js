@@ -149,20 +149,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#d8f3dc_0%,#fefae0_35%,#edf6f9_70%,#ffffff_100%)] text-emerald-950">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#fef3c7_0%,#fde68a_25%,#fff7ed_55%,#ffffff_100%)] text-slate-950">
       <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col justify-center gap-6 px-6 py-12">
-        <div className="rounded-3xl border border-emerald-900/10 bg-white/85 p-8 shadow-[0_18px_40px_rgba(16,185,129,0.12)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-emerald-600">
+        <div className="rounded-3xl border border-amber-200 bg-white/85 p-8 shadow-[0_18px_40px_rgba(251,191,36,0.25)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-amber-700">
             Food Lover
           </p>
-          <h1 className="mt-4 text-3xl font-semibold text-emerald-950">Welcome back</h1>
-          <p className="mt-2 text-sm text-emerald-700">
+          <h1 className="mt-4 text-3xl font-semibold text-slate-900">Welcome back</h1>
+          <p className="mt-2 text-sm text-slate-700">
             Sign in to access your saved kitchens, cravings, and live orders.
           </p>
 
           {step === "login" ? (
             <form onSubmit={onSubmit} className="mt-8 space-y-4">
-              <label className="block text-sm font-medium text-emerald-800">
+              <label className="block text-sm font-medium text-slate-700">
                 Email
                 <input
                   name="email"
@@ -170,12 +170,12 @@ export default function LoginPage() {
                   value={form.email}
                   onChange={onChange}
                   required
-                  className="mt-2 w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-900 outline-none focus:border-emerald-400"
+                  className="mt-2 w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-amber-400"
                   placeholder="you@example.com"
                 />
               </label>
 
-              <label className="block text-sm font-medium text-emerald-800">
+              <label className="block text-sm font-medium text-slate-700">
                 Password
                 <input
                   name="password"
@@ -183,7 +183,7 @@ export default function LoginPage() {
                   value={form.password}
                   onChange={onChange}
                   required
-                  className="mt-2 w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-900 outline-none focus:border-emerald-400"
+                  className="mt-2 w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-amber-400"
                   placeholder="••••••••"
                 />
               </label>
@@ -196,14 +196,14 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full rounded-full bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-emerald-700"
+                className="w-full rounded-full bg-amber-500 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-amber-600"
               >
                 {status === "Signing in..." ? "Signing in..." : "Continue"}
               </button>
             </form>
           ) : (
             <form onSubmit={onVerifyOtp} className="mt-8 space-y-4">
-              <label className="block text-sm font-medium text-emerald-800">
+              <label className="block text-sm font-medium text-slate-700">
                 Verification code
                 <input
                   name="otp"
@@ -217,13 +217,13 @@ export default function LoginPage() {
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   maxLength={6}
-                  className="mt-2 w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-900 outline-none focus:border-emerald-400"
+                  className="mt-2 w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-amber-400"
                   placeholder="6-digit code"
                 />
               </label>
 
               {otpHint ? (
-                <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-700">
+                <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
                   Dev OTP: {otpHint}
                 </p>
               ) : null}
@@ -236,7 +236,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full rounded-full bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-emerald-700"
+                className="w-full rounded-full bg-amber-500 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-amber-600"
               >
                 {otpStatus === "Verifying..." ? "Verifying..." : "Verify code"}
               </button>
@@ -245,20 +245,20 @@ export default function LoginPage() {
                 type="button"
                 onClick={onResendOtp}
                 disabled={resendCooldown > 0}
-                className="w-full rounded-full border border-emerald-300 px-4 py-3 text-sm font-semibold text-emerald-800 hover:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-full border border-amber-300 px-4 py-3 text-sm font-semibold text-amber-900 hover:border-amber-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
               </button>
             </form>
           )}
 
-          <div className="mt-6 flex items-center justify-between text-xs text-emerald-700">
-            <p>Status: {step === "login" ? status : otpStatus}</p>
+          <div className="mt-6 flex items-center justify-between text-xs text-amber-700">
+            {/* <p>Status: {step === "login" ? status : otpStatus}</p> */}
             <div className="flex items-center gap-3">
-              <Link className="font-semibold text-emerald-800 hover:text-emerald-900" href="/register">
+              <Link className="font-semibold text-amber-900 hover:text-amber-950" href="/register">
                 Create Food Lover account
               </Link>
-              <Link className="font-semibold text-emerald-800 hover:text-emerald-900" href="/">
+              <Link className="font-semibold text-amber-900 hover:text-amber-950" href="/">
                 Back to flow
               </Link>
             </div>

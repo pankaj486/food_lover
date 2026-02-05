@@ -254,7 +254,7 @@ export default function AdminLoginPage() {
           )}
 
           <div className="mt-6 flex items-center justify-between text-xs text-slate-600">
-            <p>Status: {step === "login" ? status : otpStatus}</p>
+            {/* <p>Status: {step === "login" ? status : otpStatus}</p> */}
             <div className="flex items-center gap-3">
               <Link className="font-semibold text-slate-700 hover:text-slate-900" href="/">
                 Back to landing

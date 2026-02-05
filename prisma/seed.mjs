@@ -3,9 +3,9 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const email = (process.env.SEED_USER_EMAIL || "admin-demo@yopmail.com").toLowerCase();
-const password = process.env.SEED_USER_PASSWORD || "password";
-const name = process.env.SEED_USER_NAME || "Demo Admin";
+const email = (process.env.SEED_USER_EMAIL || "").toLowerCase();
+const password = process.env.SEED_USER_PASSWORD || "";
+const name = process.env.SEED_USER_NAME || "";
 
 try {
   const passwordHash = await bcrypt.hash(password, 10);
