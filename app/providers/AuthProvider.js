@@ -9,6 +9,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [accessToken, setAccessTokenState] = useState("");
   const [user, setUser] = useState(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   const accessTokenRef = useRef("");
   const apiRef = useRef(null);
@@ -48,6 +49,34 @@ export function AuthProvider({ children }) {
     []
   );
 
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const response = await apiRef.current.post("/api/refresh");
+        const newToken = response.data?.accessToken || "";
+        
+        if (newToken) {
+          setAccessToken(newToken);
+          
+          try {
+            const userResponse = await apiRef.current.get("/api/protected");
+            if (userResponse.data?.user) {
+              setUser(userResponse.data.user);
+            }
+          } catch (err) {
+            console.error("Failed to fetch user profile:", err);
+          }
+        }
+      } catch (error) {
+        console.log("No valid session to restore");
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    restoreSession();
+  }, [setAccessToken]);
+
   const value = useMemo(
     () => ({
       accessToken,
@@ -55,6 +84,7 @@ export function AuthProvider({ children }) {
       user,
       setUser,
       api: apiRef.current,
+      isInitializing,
       logout: async () => {
         try {
           await apiRef.current.post("/api/logout");
@@ -67,7 +97,7 @@ export function AuthProvider({ children }) {
         setUser(null);
       },
     }),
-    [accessToken, setAccessToken, user]
+    [accessToken, setAccessToken, user, isInitializing]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

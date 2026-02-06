@@ -22,8 +22,13 @@ export async function GET(request) {
 
     return NextResponse.json({
       message: "Protected data delivered",
-      userId: user.id,
-      userEmail: user.email,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name ?? "",
+        imageUrl: user.imageUrl ?? "",
+        isAdmin: false,
+      },
       scope: payload.scope,
       timestamp: new Date().toISOString(),
     });

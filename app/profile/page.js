@@ -7,7 +7,7 @@ import { useAuth } from "../providers/AuthProvider";
 import { uploadImage } from "../lib/uploadImage";
 
 export default function ProfilePage() {
-  const { user, logout, api, setUser } = useAuth();
+  const { user, logout, api, setUser, isInitializing } = useAuth();
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -114,6 +114,18 @@ export default function ProfilePage() {
       toast.error(message);
     }
   };
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#fef3c7_0%,#fde68a_25%,#fff7ed_55%,#ffffff_100%)] text-slate-950">
+        <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center gap-6 px-6 py-12">
+          <div className="rounded-3xl border border-amber-200 bg-white/80 p-8 text-center shadow-[0_18px_40px_rgba(251,191,36,0.25)]">
+            <p className="text-sm text-slate-700">Loading...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

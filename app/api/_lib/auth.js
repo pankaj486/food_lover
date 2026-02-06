@@ -1,8 +1,16 @@
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
-const ACCESS_TOKEN_TTL = "30s";
-const REFRESH_TOKEN_TTL = "7d";
+const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || "20m";
+const REFRESH_TOKEN_TTL = process.env.REFRESH_TOKEN_TTL || "7d";
+
+const parseAccessTtl = (ttl) => {
+  const match = String(ttl).match(/^(\d+)([smhd])$/);
+  if (!match) return 1200; 
+  const [, value, unit] = match;
+  const multipliers = { s: 1, m: 60, h: 3600, d: 86400 };
+  return parseInt(value) * (multipliers[unit] || 60);
+};
 
 const basePayload = {
   iss: "my-next-app",
@@ -57,7 +65,7 @@ export function verifyRefreshToken(token) {
 }
 
 export const tokenConfig = {
-  accessTtlSeconds: 30,
+  accessTtlSeconds: parseAccessTtl(ACCESS_TOKEN_TTL),
   refreshTtlDays: 7,
 };
 
