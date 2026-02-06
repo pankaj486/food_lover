@@ -34,3 +34,20 @@ export async function updateUserPassword(userId, newPassword) {
     data: { passwordHash },
   });
 }
+
+export async function updateUserProfile(userId, { name, imageUrl }) {
+  const data = {};
+  if (typeof name === "string") {
+    const trimmedName = name.trim();
+    data.name = trimmedName || null;
+  }
+  if (typeof imageUrl === "string") {
+    const trimmedUrl = imageUrl.trim();
+    data.imageUrl = trimmedUrl || null;
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data,
+  });
+}

@@ -67,7 +67,13 @@ export async function POST(request) {
     const response = NextResponse.json({
       accessToken,
       expiresIn: tokenConfig.accessTtlSeconds,
-      user: { id: user.id, email: user.email, name: user.name ?? "", isAdmin: true },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name ?? "",
+        imageUrl: user.imageUrl ?? "",
+        isAdmin: true,
+      },
     });
 
     response.cookies.set({

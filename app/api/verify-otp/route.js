@@ -63,6 +63,7 @@ export async function POST(request) {
         id: user.id,
         email: user.email,
         name: user.name ?? "",
+        imageUrl: user.imageUrl ?? "",
         isAdmin: isAdminEmail(user.email),
       },
     });

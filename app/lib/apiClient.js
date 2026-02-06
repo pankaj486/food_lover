@@ -68,7 +68,7 @@ export function createApiClient({ getAccessToken, setAccessToken, onAuthFailure,
           if (token) {
             originalRequest.headers.Authorization = `Bearer ${token}`;
           }
-          return api(originalRequest);
+          return api.request(originalRequest);
         });
       }
 
@@ -83,7 +83,7 @@ export function createApiClient({ getAccessToken, setAccessToken, onAuthFailure,
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
         }
 
-        return api(originalRequest);
+        return api.request(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
         if (onAuthFailure) {
