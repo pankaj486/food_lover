@@ -1,78 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../providers/AuthProvider";
 
 export default function DashboardPage() {
-  const { accessToken, user, setAccessToken, api, logout, isInitializing } = useAuth();
-  const [status, setStatus] = useState("Idle");
-  const [logs, setLogs] = useState([]);
+  const router = useRouter();
+  const { user, api, logout, isInitializing } = useAuth();
+  const [foodItems, setFoodItems] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const addLog = (message) => {
-    setLogs((prev) => [
-      { id: crypto.randomUUID(), message, time: new Date().toLocaleTimeString() },
-      ...prev,
-    ]);
-  };
-
-  const tokenPreview = useMemo(() => {
-    if (!accessToken) return "No access token";
-    return `${accessToken.slice(0, 16)}...${accessToken.slice(-12)}`;
-  }, [accessToken]);
-
-  const refreshToken = async () => {
-    addLog("Calling /api/refresh with refresh token cookie");
-
+  const loadFoodItems = useCallback(async () => {
+    setLoading(true);
     try {
-      const response = await api.post("/api/refresh");
-      setAccessToken(response.data.accessToken || "");
-      addLog("Refresh successful. New access token stored in memory.");
-      toast.success("Access token refreshed");
-      return response.data.accessToken;
+      const response = await api.get("/api/food-items");
+      setFoodItems(response.data?.foodItems || []);
     } catch (error) {
-      addLog("Refresh token invalid. User must login again.");
-      setAccessToken("");
-      toast.error("Refresh failed. Please login again.");
-      return null;
+      console.error("Failed to load food items:", error);
+      toast.error("Failed to load menu items");
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [api]);
 
-  const callProtected = async () => {
-    if (!accessToken) {
-      addLog("No access token in memory. Login first.");
-      setStatus("Unauthorized");
-      return;
+  useEffect(() => {
+    loadFoodItems();
+  }, [loadFoodItems]);
+
+  useEffect(() => {
+    if (!isInitializing && user?.isAdmin) {
+      toast.success("Redirecting to Admin Panel...");
+      router.push("/admin");
     }
-
-    setStatus("Calling protected API...");
-    addLog("Calling /api/protected with Authorization header");
-
-    try {
-      const response = await api.get("/api/protected");
-      addLog(`Protected data received: ${response.data.message}`);
-      setStatus("Success");
-      toast.success("Protected data received");
-    } catch (error) {
-      if (error.response?.status === 401) {
-        addLog("Access token expired. Axios interceptor triggered refresh.");
-        setStatus("Refreshing");
-        toast("Refreshing access token...");
-        return;
-      }
-      addLog("Protected API call failed.");
-      setStatus("Request failed");
-      toast.error("Protected API failed");
-    }
-  };
-
-  const clearAccessToken = () => {
-    setAccessToken("");
-    addLog("Access token cleared from memory.");
-    setStatus("Idle");
-    toast("Access token cleared.");
-  };
+  }, [user, isInitializing, router]);
 
   if (isInitializing) {
     return (
@@ -127,7 +89,7 @@ export default function DashboardPage() {
               <p className="text-xs uppercase tracking-[0.3em] text-amber-700">Food Lover</p>
               <h1 className="mt-2 text-3xl font-semibold text-slate-900">Customer dashboard</h1>
               <p className="mt-2 text-sm text-slate-600">
-                Review your session, refresh tokens, and test protected APIs.
+                Browse our delicious menu and manage your orders.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -139,18 +101,10 @@ export default function DashboardPage() {
               </Link>
               <Link
                 href="/profile"
-                className="rounded-full border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-900 hover:border-amber-500"
+                className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:border-slate-500"
               >
                 Profile
               </Link>
-              {user?.isAdmin ? (
-                <Link
-                  href="/admin"
-                  className="rounded-full border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-900 hover:border-amber-500"
-                >
-                  Admin console
-                </Link>
-              ) : null}
               <button
                 onClick={logout}
                 className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-amber-600"
@@ -161,67 +115,107 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <section className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-          <div className="rounded-3xl border border-amber-200 bg-white/80 p-6 shadow-[0_18px_40px_rgba(251,191,36,0.18)]">
-            <p className="text-sm font-semibold text-amber-700">Your Food Lover session</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{status}</p>
-            <div className="mt-6 space-y-3">
-              <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                <span className="font-semibold">Access token</span>
-                <p className="mt-1 break-all text-xs text-amber-800">{tokenPreview}</p>
-              </div>
-              <div className="rounded-2xl border border-amber-100 bg-white px-4 py-3 text-xs text-slate-900">
-                <p>Signed-in user</p>
-                <p className="mt-1 font-mono text-[11px]">{user?.email || "Not signed in"}</p>
-              </div>
-              <div className="flex flex-wrap gap-2 pt-2">
-                <button
-                  onClick={refreshToken}
-                  className="rounded-full border border-amber-300 px-3 py-2 text-xs font-semibold text-amber-900 hover:border-amber-500"
-                >
-                  Refresh token
-                </button>
-                <button
-                  onClick={clearAccessToken}
-                  className="rounded-full border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 hover:border-amber-500"
-                >
-                  Clear access token
-                </button>
-              </div>
+        {/* Food Menu Section */}
+        <section className="flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Our Menu</h2>
+              <p className="mt-1 text-sm text-slate-600">Discover our delicious food items</p>
+            </div>
+            <div className="text-sm font-semibold text-amber-700">
+              {foodItems.length} items available
             </div>
           </div>
 
-          <div className="rounded-3xl border border-amber-200 bg-white/80 p-6 shadow-[0_18px_40px_rgba(251,191,36,0.18)]">
-            <h2 className="text-lg font-semibold text-slate-900">Order command center</h2>
-            <p className="mt-2 text-sm text-slate-700">
-              Use these controls to test secure APIs powering orders and kitchen updates.
-            </p>
-            <div className="mt-6 flex flex-col gap-3">
-              <button
-                onClick={callProtected}
-                className="rounded-full border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-900 hover:border-amber-500"
-              >
-                Fetch protected order data
-              </button>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto"></div>
+                <p className="mt-4 text-slate-600">Loading menu items...</p>
+              </div>
             </div>
-            <div className="mt-6 max-h-[260px] space-y-3 overflow-y-auto pr-2">
-              {logs.length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-amber-200 bg-amber-50 px-4 py-6 text-sm text-amber-900">
-                  No events yet. Use the controls above to test the flow.
-                </p>
-              ) : (
-                logs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 text-sm text-slate-900"
-                  >
-                    <p className="text-xs text-amber-700">{log.time}</p>
-                    <p className="mt-1">{log.message}</p>
+          ) : foodItems.length === 0 ? (
+            <div className="rounded-3xl border-2 border-dashed border-amber-200 bg-amber-50/50 px-8 py-12 text-center">
+              <p className="text-amber-900">No menu items available at the moment</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:gap-5 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {foodItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="group flex flex-col rounded-xl sm:rounded-2xl border border-amber-200 bg-white shadow-md hover:shadow-lg transition-all duration-300 hover:border-amber-300 overflow-hidden"
+                >
+                  {/* Image Container */}
+                  <div className="relative overflow-hidden bg-linear-to-br from-amber-50 to-orange-50 w-full aspect-square sm:aspect-video">
+                    {item.images && item.images.length > 0 && item.images[0]?.imageUrl ? (
+                      <img
+                        src={item.images[0].imageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-amber-100 to-orange-100">
+                        <span className="text-4xl sm:text-5xl">🍽️</span>
+                      </div>
+                    )}
+                    
+                    {/* Vegetarian Badge */}
+                    {item.isVegetarian && (
+                      <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-green-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-semibold">
+                        Veg
+                      </div>
+                    )}
+
+                    {/* Availability Badge */}
+                    {!item.isAvailable && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <span className="text-white font-semibold bg-red-600 px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-xs sm:text-sm">
+                          Out of Stock
+                        </span>
+                      </div>
+                    )}
                   </div>
-                ))
-              )}
+
+                  {/* Content */}
+                  <div className="p-3 sm:p-4 flex flex-col grow">
+                    {/* Name and Category */}
+                    <div className="mb-2">
+                      <h3 className="font-bold text-slate-900 text-sm sm:text-base line-clamp-2 leading-tight">
+                        {item.name}
+                      </h3>
+                      <p className="text-xs text-amber-700 font-semibold mt-1">
+                        {item.category?.name || "Uncategorized"}
+                      </p>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 mb-2 sm:mb-3 leading-relaxed grow">
+                      {item.description || "Delicious food item"}
+                    </p>
+
+                    {/* Price and Button */}
+                    <div className="flex items-center justify-between gap-2 mt-auto pt-2 sm:pt-3 border-t border-amber-100">
+                      <div>
+                        <span className="text-lg sm:text-xl font-bold text-amber-600">
+                          ₹{item.price}
+                        </span>
+                      </div>
+                      <button
+                        disabled={!item.isAvailable}
+                        className={`px-2 sm:px-3 py-1 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 whitespace-nowrap ${
+                          item.isAvailable
+                            ? "bg-amber-500 text-white hover:bg-amber-600 shadow-md hover:shadow-lg"
+                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        }`}
+                      >
+                        {item.isAvailable ? "Order" : "N/A"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
         </section>
       </main>
     </div>

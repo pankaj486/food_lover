@@ -27,7 +27,7 @@ export async function GET(request) {
         email: user.email,
         name: user.name ?? "",
         imageUrl: user.imageUrl ?? "",
-        isAdmin: false,
+        isAdmin: user.isAdmin ?? false,
       },
       scope: payload.scope,
       timestamp: new Date().toISOString(),

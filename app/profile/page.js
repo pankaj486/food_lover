@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../providers/AuthProvider";
 import { uploadImage } from "../lib/uploadImage";
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { user, logout, api, setUser, isInitializing } = useAuth();
   const [form, setForm] = useState({
     currentPassword: "",
@@ -27,6 +29,13 @@ export default function ProfilePage() {
     setProfileForm({ name: user.name || "" });
     setImagePreview(user.imageUrl || "");
   }, [user]);
+
+  useEffect(() => {
+    if (!isInitializing && user?.isAdmin) {
+      toast.success("Redirecting to Admin Panel...");
+      router.push("/admin");
+    }
+  }, [user, isInitializing, router]);
 
   const onChange = (event) => {
     const { name, value } = event.target;

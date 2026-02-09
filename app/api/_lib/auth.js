@@ -14,7 +14,7 @@ const parseAccessTtl = (ttl) => {
 
 const basePayload = {
   iss: "my-next-app",
-  aud: "mermaid-demo",
+  aud: "food-lover",
 };
 
 export function signAccessToken(user) {
