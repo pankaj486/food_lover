@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../providers/AuthProvider";
+import { SocketStatusWithAuth } from "../components/SocketStatus";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -98,6 +99,15 @@ export default function DashboardPage() {
                 className="rounded-full border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-900 hover:border-amber-500"
               >
                 Back to landing
+              </Link>
+              <Link
+                href="/chat"
+                className="rounded-full bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:from-blue-600 hover:to-blue-700 flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Support Chat
               </Link>
               <Link
                 href="/profile"
@@ -218,6 +228,7 @@ export default function DashboardPage() {
           )}
         </section>
       </main>
+      <SocketStatusWithAuth />
     </div>
   );
 }

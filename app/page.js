@@ -6,6 +6,30 @@ import { useAuth } from "./providers/AuthProvider";
 export default function Home() {
   const { user, logout } = useAuth();
 
+  const foods = [
+    {
+      name: "Biryani Night",
+      link: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOzlJyJqrcBxSDAVAscYen6oPH9WvyPGabAA&s",
+    },
+    {
+      name: "Coastal Curry",
+      link: "https://www.chefkunalkapur.com/wp-content/uploads/2021/03/Coastal-Fish-Curry-1300x867.jpg?v=1621600571",
+    },
+    {
+      name: "Vegan Bowl",
+      link: "https://simplyceecee.co/wp-content/uploads/2018/07/veganbuddhabowl-2.jpg",
+    },
+    {
+      name: "Street Tacos",
+      link: "https://www.thecookierookie.com/wp-content/uploads/2024/05/street-tacos-recipe-2.jpg",
+    },
+  ];
+
+  // const featuredFood = () => {
+
+  //     return food
+  //   }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#fef3c7_0%,#fde68a_25%,#fff7ed_55%,#ffffff_100%)] text-slate-950">
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-12">
@@ -16,8 +40,12 @@ export default function Home() {
                 FL
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-amber-700">Food Lover</p>
-                <p className="text-sm font-semibold text-slate-900">Fresh kitchens, bold flavors</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-amber-700">
+                  Food Lover
+                </p>
+                <p className="text-sm font-semibold text-slate-900">
+                  Fresh kitchens, bold flavors
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -61,8 +89,9 @@ export default function Home() {
                 Discover local chefs, street favorites, and late-night cravings.
               </h1>
               <p className="mt-4 max-w-xl text-base leading-7 text-slate-700">
-                Food Lover connects hungry people with the best kitchens nearby. Track your
-                orders, save favorites, and unlock exclusive tasting menus.
+                Food Lover connects hungry people with the best kitchens nearby.
+                Track your orders, save favorites, and unlock exclusive tasting
+                menus.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <button className="rounded-full bg-amber-500 px-5 py-3 text-sm font-semibold text-white shadow hover:bg-amber-600">
@@ -73,18 +102,28 @@ export default function Home() {
                 </button>
               </div>
               <div className="mt-6 flex flex-wrap gap-2 text-xs text-amber-900">
-                <span className="rounded-full bg-amber-100 px-3 py-1">Handpicked kitchens</span>
-                <span className="rounded-full bg-amber-100 px-3 py-1">Live order tracking</span>
-                <span className="rounded-full bg-amber-100 px-3 py-1">Chef stories</span>
+                <span className="rounded-full bg-amber-100 px-3 py-1">
+                  Handpicked kitchens
+                </span>
+                <span className="rounded-full bg-amber-100 px-3 py-1">
+                  Live order tracking
+                </span>
+                <span className="rounded-full bg-amber-100 px-3 py-1">
+                  Chef stories
+                </span>
               </div>
             </div>
 
             <div className="rounded-3xl border border-amber-200 bg-white/80 p-6 shadow-[0_18px_40px_rgba(251,191,36,0.25)]">
-              <p className="text-sm font-semibold text-amber-700">Welcome to Food Lover</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900">Fresh picks near you</p>
+              <p className="text-sm font-semibold text-amber-700">
+                Welcome to Food Lover
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900">
+                Fresh picks near you
+              </p>
               <p className="mt-3 text-sm text-slate-700">
-                Sign in to save your favorite kitchens, track orders live, and unlock
-                tasting menus curated by local chefs.
+                Sign in to save your favorite kitchens, track orders live, and
+                unlock tasting menus curated by local chefs.
               </p>
               <div className="mt-6 grid gap-3">
                 {[
@@ -107,49 +146,67 @@ export default function Home() {
 
         <section className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
           <div className="rounded-3xl border border-amber-200 bg-white/80 p-6 shadow-[0_18px_40px_rgba(251,191,36,0.18)]">
-            <h2 className="text-lg font-semibold text-slate-900">Featured on Food Lover</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Featured on Food Lover
+            </h2>
             <p className="mt-2 text-sm text-slate-700">
-              Replace these placeholders with real dishes, kitchen photos, or promotional banners.
+              Replace these placeholders with real dishes, kitchen photos, or
+              promotional banners.
             </p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {[
-                "Biryani Night",
-                "Coastal Curry",
-                "Vegan Bowl",
-                "Street Tacos",
-              ].map((item) => (
-                <div key={item} className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
-                  <div className="h-24 rounded-xl bg-gradient-to-br from-amber-200 to-amber-100"></div>
-                  <p className="mt-3 text-sm font-semibold text-slate-900">{item}</p>
-                  <p className="text-xs text-slate-600">Image placeholder</p>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              {foods.map((item) => (
+                <div
+                  key={item.name}
+                  className="flex flex-col overflow-hidden rounded-2xl border border-amber-100 bg-[var(--color-amber-500)] text-white"
+                >
+                  <div className="h-20 w-full">
+                    <img
+                      src={item.link}
+                      alt={item.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+
+                  <div className="px-4 py-3 text-sm font-medium text-center">
+                    {item.name}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="rounded-3xl border border-amber-200 bg-white/80 p-6 shadow-[0_18px_40px_rgba(251,191,36,0.18)]">
-            <h2 className="text-lg font-semibold text-slate-900">Why Food Lover?</h2>
-            <p className="mt-2 text-sm text-slate-700">A quick look at what you get once you join.</p>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Why Food Lover?
+            </h2>
+            <p className="mt-2 text-sm text-slate-700">
+              A quick look at what you get once you join.
+            </p>
             <div className="mt-6 grid gap-4">
               {[
                 {
                   title: "Live order tracking",
-                  detail: "Follow your meal from kitchen to doorstep with real-time updates.",
+                  detail:
+                    "Follow your meal from kitchen to doorstep with real-time updates.",
                 },
                 {
                   title: "Chef curated menus",
-                  detail: "Seasonal specials and limited tasting drops every week.",
+                  detail:
+                    "Seasonal specials and limited tasting drops every week.",
                 },
                 {
                   title: "Personalized picks",
-                  detail: "Smart recommendations tailored to your cravings and diet.",
+                  detail:
+                    "Smart recommendations tailored to your cravings and diet.",
                 },
               ].map((item) => (
                 <div
                   key={item.title}
                   className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3"
                 >
-                  <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {item.title}
+                  </p>
                   <p className="text-xs text-slate-600">{item.detail}</p>
                 </div>
               ))}
